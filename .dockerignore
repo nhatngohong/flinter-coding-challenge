@@ -1,0 +1,15 @@
+.git/
+.idea/
+.venv/
+.tmp/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+results/
+tests/
+.env
+.env.*

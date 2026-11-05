@@ -1,0 +1,73 @@
+{
+  "input_file": "C:\\Users\\admin\\Desktop\\Nhat\\flinter\\flinter_coding_challenge\\ad_data.csv",
+  "input_size_bytes": 1043304870,
+  "polars_version": "2.1.0",
+  "polars_max_threads": 4,
+  "rows_read": 26843544,
+  "rows_skipped": 0,
+  "campaigns_ranked": 50,
+  "top_ctr_rows": 10,
+  "top_cpa_rows": 10,
+  "csv_read_parse_pass_seconds": 1.150403699997696,
+  "aggregation_seconds_including_its_csv_scan": 1.9604204999996,
+  "sort_and_top10_seconds": 0.0016439000028185546,
+  "output_write_seconds": 0.006161699995573144,
+  "total_execution_seconds": 3.2415802999967127,
+  "sampled_peak_process_rss_bytes": 1079951360,
+  "sampled_peak_process_rss_mib": 1029.92,
+  "sampled_peak_process_uss_bytes": 624656384,
+  "sampled_peak_process_uss_mib": 595.72,
+  "sampled_memory_by_phase": {
+    "startup": {
+      "start_rss_bytes": 51970048,
+      "peak_rss_bytes": 52027392,
+      "start_uss_bytes": 32833536,
+      "peak_uss_bytes": 32874496,
+      "peak_rss_mib": 49.62,
+      "rss_growth_mib": 0.05,
+      "peak_uss_mib": 31.35,
+      "uss_growth_mib": 0.04
+    },
+    "csv_read_parse_benchmark": {
+      "start_rss_bytes": 52027392,
+      "peak_rss_bytes": 1079951360,
+      "start_uss_bytes": 32874496,
+      "peak_uss_bytes": 38047744,
+      "peak_rss_mib": 1029.92,
+      "rss_growth_mib": 980.3,
+      "peak_uss_mib": 36.29,
+      "uss_growth_mib": 4.93
+    },
+    "campaign_aggregation": {
+      "start_rss_bytes": 897499136,
+      "peak_rss_bytes": 897499136,
+      "start_uss_bytes": 38047744,
+      "peak_uss_bytes": 624652288,
+      "peak_rss_mib": 855.92,
+      "rss_growth_mib": 0.0,
+      "peak_uss_mib": 595.71,
+      "uss_growth_mib": 559.43
+    },
+    "sort_and_top10": {
+      "start_rss_bytes": 650604544,
+      "peak_rss_bytes": 650874880,
+      "start_uss_bytes": 624652288,
+      "peak_uss_bytes": 624656384,
+      "peak_rss_mib": 620.72,
+      "rss_growth_mib": 0.26,
+      "peak_uss_mib": 595.72,
+      "uss_growth_mib": 0.0
+    },
+    "output_writing": {
+      "start_rss_bytes": 650874880,
+      "peak_rss_bytes": 650907648,
+      "start_uss_bytes": 624656384,
+      "peak_uss_bytes": 624656384,
+      "peak_rss_mib": 620.75,
+      "rss_growth_mib": 0.03,
+      "peak_uss_mib": 595.72,
+      "uss_growth_mib": 0.0
+    }
+  },
+  "note": "CSV read timing is a separate streaming scan/parse pass. Aggregation also scans the CSV because Polars fuses scan and aggregation in its lazy query. Total includes the benchmark pass. Peak RSS is sampled every 50 ms. RSS can include shared or mapped pages; USS estimates unique process memory."
+}

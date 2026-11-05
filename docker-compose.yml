@@ -1,0 +1,15 @@
+services:
+  aggregator:
+    build:
+      context: .
+    image: flinter-coding-challenge:local
+    environment:
+      POLARS_MAX_THREADS: "4"
+      INPUT_CSV_PATH: /app/ad_data.csv
+      OUTPUT_DIR: /output
+    volumes:
+      - type: bind
+        source: ./results
+        target: /output
+        bind:
+          create_host_path: true
