@@ -2,6 +2,19 @@
 
 Python CLI that aggregates advertising performance by campaign and writes CTR and CPA rankings using Polars.
 
+## Solution approach
+
+Polars is used for its lazy CSV scanning and parallel query execution, which support efficient processing of large input files. The Docker configuration caps the thread pool at four threads to balance performance with memory use. Explicit input types, row validation, logged skips, and deterministic tie-breaking make runs more predictable and reliable.
+
+High-level flow:
+
+1. Load input and output paths from `.env` or CLI options; validate the input file and required columns.
+2. Lazily scan the CSV with typed columns and projection pushdown, validate rows, and aggregate metrics by campaign using the streaming engine.
+3. Calculate CTR and CPA, then sort by the requested metric and campaign ID and select up to ten campaigns for each report.
+4. Write the two CSV reports and benchmark details, replacing existing outputs as needed.
+
+Dates are validated but do not filter or partition results; aggregation covers all valid rows. Campaigns with zero impressions are excluded, and campaigns with zero conversions are excluded from the CPA ranking.
+
 ## Before you start: add the CSV
 
 Place the challenge dataset named `ad_data.csv` in the project root, alongside `Dockerfile` and `pyproject.toml`. The Docker build copies this file into the image, so the build will fail if it is missing. The same file is the default input for local runs.

@@ -1,6 +1,5 @@
 .venv/
 .tmp/
-.env
 ad_data.csv
 __pycache__/
 *.py[cod]
