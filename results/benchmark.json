@@ -2,7 +2,7 @@
   "input_size_bytes": 1043304870,
   "rows_read": 26843544,
   "rows_skipped": 0,
-  "total_execution_seconds": 1.8739190000051167,
-  "sampled_peak_process_rss_mib": 221.27,
-  "sampled_peak_process_uss_mib": 196.57
+  "total_execution_seconds": 4.865734706000012,
+  "sampled_peak_process_rss_mib": 204.56,
+  "sampled_peak_process_uss_mib": 208.86
 }

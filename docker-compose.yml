@@ -3,9 +3,6 @@ services:
     build:
       context: .
     image: flinter-coding-challenge:local
-    # Keep stdin attached for the shell configured as the image command.
-    stdin_open: true
-    tty: true
     environment:
       POLARS_MAX_THREADS: "4"
       POLARS_CSV_CHUNK_SIZE: "4194304"

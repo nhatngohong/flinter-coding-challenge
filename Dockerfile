@@ -14,4 +14,4 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN python -m pip install --no-cache-dir .
 
-CMD ["/bin/sh", "-i"]
+CMD ["sleep", "infinity"]

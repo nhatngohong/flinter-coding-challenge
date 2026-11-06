@@ -24,16 +24,17 @@ Place the challenge dataset named `ad_data.csv` in the project root, alongside `
 Install and start Docker Desktop or Docker Engine with the Docker Compose plugin, then run this from the project root:
 
 ```sh
-docker compose up --build
+docker compose up --build -d
+docker compose exec aggregator /bin/sh
 ```
 
-Compose opens an interactive shell in the container. At its prompt, run:
+This starts the container in the background, then opens an interactive shell inside it. At the container prompt, run:
 
 ```sh
 python -m flinter_coding_challenge.cli
 ```
 
-Compose mounts `ad_data.csv` read-only at `/app/ad_data.csv` and the host `results/` folder at `/output` in the container. The reports `top10_ctr.csv`, `top10_cpa.csv`, and `benchmark.json` will appear in `results/`. Type `exit` when finished to stop the container. Replacing the CSV does not require rebuilding the image.
+Compose mounts `ad_data.csv` read-only at `/app/ad_data.csv` and the host `results/` folder at `/output` in the container. The reports `top10_ctr.csv`, `top10_cpa.csv`, and `benchmark.json` will appear in `results/`. Type `exit` to leave the shell, then run `docker compose down` to stop the container. Replacing the CSV does not require rebuilding the image.
 
 ## Prerequisites
 
