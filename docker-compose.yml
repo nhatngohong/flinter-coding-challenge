@@ -3,9 +3,7 @@ services:
     build:
       context: .
     image: flinter-coding-challenge:local
-    # Drop into a shell so the user can launch the CLI in this terminal.
-    entrypoint: ["/bin/sh"]
-    command: ["-i"]
+    # Keep stdin attached for the shell configured as the image command.
     stdin_open: true
     tty: true
     environment:
