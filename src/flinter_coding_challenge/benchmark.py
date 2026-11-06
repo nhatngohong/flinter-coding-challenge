@@ -1,7 +1,12 @@
 """Execution timing and sampled process memory measurements."""
 
+from __future__ import annotations
+
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from typing import Self
 
 import psutil
 
@@ -18,6 +23,7 @@ class PeakMemorySampler:
         self._thread = threading.Thread(target=self._sample, daemon=True)
         self._phase = "startup"
         self._phase_stats: dict[str, dict[str, int]] = {}
+        self._lock = threading.Lock()
 
     def _memory_info(self) -> tuple[int, int]:
         info = self.process.memory_full_info()
@@ -26,12 +32,13 @@ class PeakMemorySampler:
     def _sample_once(self) -> None:
         try:
             rss, uss = self._memory_info()
-            self.peak_rss_bytes = max(self.peak_rss_bytes, rss)
-            self.peak_uss_bytes = max(self.peak_uss_bytes, uss)
-            stats = self._phase_stats.get(self._phase)
-            if stats is not None:
-                stats["peak_rss_bytes"] = max(stats["peak_rss_bytes"], rss)
-                stats["peak_uss_bytes"] = max(stats["peak_uss_bytes"], uss)
+            with self._lock:
+                self.peak_rss_bytes = max(self.peak_rss_bytes, rss)
+                self.peak_uss_bytes = max(self.peak_uss_bytes, uss)
+                stats = self._phase_stats.get(self._phase)
+                if stats is not None:
+                    stats["peak_rss_bytes"] = max(stats["peak_rss_bytes"], rss)
+                    stats["peak_uss_bytes"] = max(stats["peak_uss_bytes"], uss)
         except psutil.Error:
             pass
 
@@ -40,7 +47,7 @@ class PeakMemorySampler:
             self._sample_once()
             self._stop.wait(self.interval_seconds)
 
-    def __enter__(self) -> "PeakMemorySampler":
+    def __enter__(self) -> Self:
         self._sample_once()
         rss, uss = self._memory_info()
         self._phase_stats["startup"] = {
@@ -56,18 +63,21 @@ class PeakMemorySampler:
         """Start tracking absolute memory and growth for a named stage."""
         self._sample_once()
         rss, uss = self._memory_info()
-        self._phase = name
-        self._phase_stats[name] = {
-            "start_rss_bytes": rss,
-            "peak_rss_bytes": rss,
-            "start_uss_bytes": uss,
-            "peak_uss_bytes": uss,
-        }
+        with self._lock:
+            self._phase = name
+            self._phase_stats[name] = {
+                "start_rss_bytes": rss,
+                "peak_rss_bytes": rss,
+                "start_uss_bytes": uss,
+                "peak_uss_bytes": uss,
+            }
 
     def report(self) -> dict[str, dict[str, Any]]:
         """Return sampled per-phase peak memory and growth from each baseline."""
         result: dict[str, dict[str, Any]] = {}
-        for name, stats in self._phase_stats.items():
+        with self._lock:
+            stats_snapshot = {name: dict(stats) for name, stats in self._phase_stats.items()}
+        for name, stats in stats_snapshot.items():
             result[name] = {
                 **stats,
                 "peak_rss_mib": round(stats["peak_rss_bytes"] / 1048576, 2),

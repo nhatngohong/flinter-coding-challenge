@@ -4,11 +4,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
 from .errors import ConfigurationError
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path.cwd()
 
 
 @dataclass(frozen=True)
@@ -28,10 +28,10 @@ def load_config(
     output_override: str | None = None,
 ) -> AppConfig:
     """Load .env values, applying command-line overrides when supplied."""
-    if env_file.exists():
-        load_dotenv(env_file, override=True)
-    input_value = input_override or os.getenv("INPUT_CSV_PATH")
-    output_value = output_override or os.getenv("OUTPUT_DIR")
+    resolved_env = env_file.resolve()
+    values = dotenv_values(resolved_env) if resolved_env.exists() else {}
+    input_value = input_override or os.environ.get("INPUT_CSV_PATH") or values.get("INPUT_CSV_PATH")
+    output_value = output_override or os.environ.get("OUTPUT_DIR") or values.get("OUTPUT_DIR")
     if not input_value:
         raise ConfigurationError(
             f"INPUT_CSV_PATH is missing in {env_file}; set it or pass --input."
@@ -41,8 +41,8 @@ def load_config(
             f"OUTPUT_DIR is missing in {env_file}; set it or pass --output."
         )
     return AppConfig(
-        input_csv=_resolve_path(input_value, base=PROJECT_ROOT),
-        output_dir=_resolve_path(output_value, base=PROJECT_ROOT),
+        input_csv=_resolve_path(input_value, base=(Path.cwd() if input_override or os.environ.get("INPUT_CSV_PATH") else resolved_env.parent)),
+        output_dir=_resolve_path(output_value, base=(Path.cwd() if output_override or os.environ.get("OUTPUT_DIR") else resolved_env.parent)),
     )
 
 

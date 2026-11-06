@@ -27,7 +27,13 @@ Install and start Docker Desktop or Docker Engine with the Docker Compose plugin
 docker compose up --build
 ```
 
-The image bundles `ad_data.csv`; you do not need to mount or provide the input at runtime. Compose mounts the host `results/` folder at `/output` in the container. After the container exits, retrieve `top10_ctr.csv`, `top10_cpa.csv`, and `benchmark.json` from `results/`. Rebuild the image after replacing the CSV.
+Compose opens an interactive shell in the container. At its prompt, run:
+
+```sh
+python -m flinter_coding_challenge.cli
+```
+
+The image bundles `ad_data.csv`; you do not need to mount or provide the input at runtime. Compose mounts the host `results/` folder at `/output` in the container. The reports `top10_ctr.csv`, `top10_cpa.csv`, and `benchmark.json` will appear in `results/`. Type `exit` when finished to stop the container. Rebuild the image after replacing the CSV.
 
 ## Prerequisites
 
@@ -119,4 +125,4 @@ Measured on the included `ad_data.csv` on a Windows host using Python 3.14.5, Po
 | Peak RSS | 1,046.77 MiB |
 | Peak USS | 623.23 MiB |
 
-Total time includes the separate streaming scan used to measure CSV parsing; aggregation reads the CSV again. RSS and USS were sampled every 50 ms, so a brief transient peak may be missed. The CPU model, physical memory, and storage details were not recorded; system hardware inventory was unavailable during measurement. The complete phase metrics are in `results/benchmark.json`.
+Total time includes the separate streaming scan used to measure CSV parsing; aggregation reads the CSV again. RSS and USS were sampled every 50 ms, so a brief transient peak may be missed. The CPU model, physical memory, and storage details were not recorded; system hardware inventory was unavailable during measurement. The concise benchmark summary is in `results/benchmark.json`.

@@ -1,10 +1,10 @@
 """Command-line entry point."""
 
 import argparse
-import json
 import logging
 import time
 from pathlib import Path
+from collections.abc import Sequence
 
 import polars as pl
 
@@ -14,6 +14,7 @@ from .config import PROJECT_ROOT, load_config, validate_config
 from .errors import ChallengeError
 from .logging_config import configure_logging
 from .output import write_benchmark, write_reports
+from .validation import scan_csv
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +31,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--skip-read-benchmark", action="store_true",
-        help="Skip the separate CSV scan/parse timing pass.",
+        help="Deprecated compatibility flag; the read pass is already skipped by default.",
+    )
+    parser.add_argument(
+        "--read-benchmark", action="store_true",
+        help="Run a separate streaming CSV scan/parse timing pass.",
     )
     parser.add_argument("--verbose", action="store_true", help="Show debug logs.")
     return parser
 
 
-def main() -> int:
-    args = build_parser().parse_args()
+def main(argv: Sequence[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     configure_logging(args.verbose)
     total_started = time.perf_counter()
 
@@ -45,16 +50,17 @@ def main() -> int:
         config = load_config(args.env_file.resolve(), args.input, args.output)
         validate_config(config)
         input_size_bytes = config.input_csv.stat().st_size
+        source_frame = scan_csv(config.input_csv)
 
         with PeakMemorySampler() as memory:
             read_rows = None
             read_seconds = None
-            if not args.skip_read_benchmark:
+            if args.read_benchmark:
                 memory.set_phase("csv_read_parse_benchmark")
-                read_rows, read_seconds = benchmark_csv_read(config.input_csv)
+                read_rows, read_seconds = benchmark_csv_read(config.input_csv, source_frame)
 
             memory.set_phase("campaign_aggregation")
-            aggregation = aggregate_campaigns(config.input_csv)
+            aggregation = aggregate_campaigns(config.input_csv, source_frame)
             memory.set_phase("sort_and_top10")
             sort_started = time.perf_counter()
             top_ctr, top_cpa = select_top_reports(aggregation.campaigns)
@@ -75,8 +81,6 @@ def main() -> int:
                     aggregation.invalid_date_rows,
                     aggregation.invalid_metric_rows,
                 )
-            else:
-                logger.info("No invalid rows were skipped.")
 
             memory.set_phase("output_writing")
             write_started = time.perf_counter()
@@ -112,11 +116,23 @@ def main() -> int:
                 "unique process memory."
             ),
         }
-        benchmark_path = write_benchmark(config.output_dir, benchmark)
-        logger.info("Wrote %d CTR rows to %s", top_ctr.height, config.output_dir / "top10_ctr.csv")
-        logger.info("Wrote %d CPA rows to %s", top_cpa.height, config.output_dir / "top10_cpa.csv")
-        logger.info("Benchmark details saved to %s", benchmark_path)
-        print(json.dumps(benchmark, indent=2))
+        summary = {
+            "input_size_bytes": benchmark["input_size_bytes"],
+            "rows_read": benchmark["rows_read"],
+            "rows_skipped": benchmark["rows_skipped"],
+            "total_execution_seconds": benchmark["total_execution_seconds"],
+            "sampled_peak_process_rss_mib": benchmark["sampled_peak_process_rss_mib"],
+            "sampled_peak_process_uss_mib": benchmark["sampled_peak_process_uss_mib"],
+        }
+        write_benchmark(config.output_dir, summary)
+        print(
+            f"Done | rows={aggregation.rows_read:,} "
+            f"(skipped={aggregation.skipped_rows:,}) "
+            f"campaigns={aggregation.campaigns.height:,} "
+            f"time={total_seconds:.2f}s "
+            f"peak RSS={summary['sampled_peak_process_rss_mib']:.2f} MiB "
+            f"USS={summary['sampled_peak_process_uss_mib']:.2f} MiB"
+        )
         return 0
     except ChallengeError as exc:
         logger.error("%s", exc)

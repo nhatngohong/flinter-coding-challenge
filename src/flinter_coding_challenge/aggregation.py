@@ -26,12 +26,15 @@ class AggregationResult:
     aggregate_seconds: float
 
 
-def benchmark_csv_read(path: Path) -> tuple[int, float]:
+def benchmark_csv_read(path: Path, frame: pl.LazyFrame | None = None) -> tuple[int, float]:
     """Time a streaming CSV parse/count pass without materializing input rows."""
-    frame = scan_csv(path)
+    frame = frame or scan_csv(path)
     started = perf_counter()
     try:
-        count = frame.select(pl.len().alias("rows_read")).collect(
+        count = frame.select(
+            (pl.col("impressions").count() + pl.col("impressions").null_count())
+            .alias("rows_read")
+        ).collect(
             engine="streaming"
         ).item()
     except Exception as exc:
@@ -39,31 +42,34 @@ def benchmark_csv_read(path: Path) -> tuple[int, float]:
     return int(count), perf_counter() - started
 
 
-def aggregate_campaigns(path: Path) -> AggregationResult:
+def aggregate_campaigns(path: Path, frame: pl.LazyFrame | None = None) -> AggregationResult:
     started = perf_counter()
     try:
-        grouped = validated_campaign_groups(path).collect(engine="streaming")
+        grouped = validated_campaign_groups(path, frame=frame).collect(engine="streaming")
     except InputDataError:
         raise
     except Exception as exc:
         raise InputDataError(f"Failed while validating or aggregating {path}: {exc}") from exc
 
-    null_rows = grouped.filter(pl.col("_campaign_key").is_null())
-    if null_rows.height:
-        skipped_rows = int(null_rows["_skipped_rows"][0])
-        invalid_campaign_rows = int(null_rows["_invalid_campaign_rows"][0])
-        invalid_date_rows = int(null_rows["_invalid_date_rows"][0])
-        invalid_metric_rows = int(null_rows["_invalid_metric_rows"][0])
-    else:
-        skipped_rows = invalid_campaign_rows = invalid_date_rows = invalid_metric_rows = 0
-    rows_read = int(grouped["_valid_rows"].sum() or 0) + skipped_rows
+    grouped = grouped.with_columns(pl.col("campaign_id").cast(pl.String))
+    grouped = grouped.with_columns(
+        (pl.col("campaign_id").is_null() | (pl.col("campaign_id").str.strip_chars() == ""))
+        .alias("_bad_campaign")
+    )
+    invalid_campaign_rows = int(grouped.filter(pl.col("_bad_campaign"))["_rows"].sum() or 0)
+    # Invalid rows are already counted by their rule; overlap is retained in each category.
+    invalid_date_rows = int(grouped["_invalid_date_rows"].sum() or 0)
+    invalid_metric_rows = int(grouped["_invalid_metric_rows"].sum() or 0)
+    rows_read = int(grouped["_rows"].sum() or 0)
+    valid_rows = int(grouped.filter(~pl.col("_bad_campaign"))["_valid_rows"].sum() or 0)
+    skipped_rows = rows_read - valid_rows
     campaigns = (
         grouped.filter(
-            pl.col("_campaign_key").is_not_null()
+            ~pl.col("_bad_campaign")
             & (pl.col("total_impressions") > 0)
         )
         .select(
-            pl.col("_campaign_key").alias("campaign_id"),
+            pl.col("campaign_id"),
             "total_impressions", "total_clicks", "total_spend", "total_conversions",
         )
         .with_columns(

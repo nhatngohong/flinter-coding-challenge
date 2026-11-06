@@ -3,8 +3,15 @@ services:
     build:
       context: .
     image: flinter-coding-challenge:local
+    # Drop into a shell so the user can launch the CLI in this terminal.
+    entrypoint: ["/bin/sh"]
+    stdin_open: true
+    tty: true
     environment:
       POLARS_MAX_THREADS: "4"
+      POLARS_CSV_CHUNK_SIZE: "4194304"
+      POLARS_CSV_CHUNK_PREFETCH_LIMIT: "2"
+      POLARS_IDEAL_MORSEL_SIZE: "50000"
       INPUT_CSV_PATH: /app/ad_data.csv
       OUTPUT_DIR: /output
     volumes:
