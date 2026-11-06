@@ -12,8 +12,6 @@ WORKDIR /app
 
 COPY pyproject.toml README.md ./
 COPY src ./src
-COPY ad_data.csv ./ad_data.csv
-
 RUN python -m pip install --no-cache-dir .
 
 CMD ["flinter-challenge"]

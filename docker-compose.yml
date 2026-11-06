@@ -16,6 +16,10 @@ services:
       OUTPUT_DIR: /output
     volumes:
       - type: bind
+        source: ./ad_data.csv
+        target: /app/ad_data.csv
+        read_only: true
+      - type: bind
         source: ./results
         target: /output
         bind:

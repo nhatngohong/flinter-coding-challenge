@@ -17,7 +17,7 @@ Dates are validated but do not filter or partition results; aggregation covers a
 
 ## Before you start: add the CSV
 
-Place the challenge dataset named `ad_data.csv` in the project root, alongside `Dockerfile` and `pyproject.toml`. The Docker build copies this file into the image, so the build will fail if it is missing. The same file is the default input for local runs.
+Place the challenge dataset named `ad_data.csv` in the project root, alongside `Dockerfile` and `pyproject.toml`. It is the default input for local runs and is mounted read-only into the container at `/app/ad_data.csv` when using Compose.
 
 ## Run with Docker
 
@@ -33,7 +33,7 @@ Compose opens an interactive shell in the container. At its prompt, run:
 python -m flinter_coding_challenge.cli
 ```
 
-The image bundles `ad_data.csv`; you do not need to mount or provide the input at runtime. Compose mounts the host `results/` folder at `/output` in the container. The reports `top10_ctr.csv`, `top10_cpa.csv`, and `benchmark.json` will appear in `results/`. Type `exit` when finished to stop the container. Rebuild the image after replacing the CSV.
+Compose mounts `ad_data.csv` read-only at `/app/ad_data.csv` and the host `results/` folder at `/output` in the container. The reports `top10_ctr.csv`, `top10_cpa.csv`, and `benchmark.json` will appear in `results/`. Type `exit` when finished to stop the container. Replacing the CSV does not require rebuilding the image.
 
 ## Prerequisites
 
