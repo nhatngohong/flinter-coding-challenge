@@ -5,6 +5,7 @@ services:
     image: flinter-coding-challenge:local
     # Drop into a shell so the user can launch the CLI in this terminal.
     entrypoint: ["/bin/sh"]
+    command: ["-i"]
     stdin_open: true
     tty: true
     environment:
